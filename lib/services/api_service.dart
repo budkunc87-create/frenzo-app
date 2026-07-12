@@ -21,7 +21,12 @@ class ApiService {
   }
 
   static Future<Map<String, String>> _headers({bool withAuth = true}) async {
-    final headers = {'Content-Type': 'application/json'};
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36',
+      'X-Requested-With': 'XMLHttpRequest',
+    };
     if (withAuth) {
       final token = await _getToken();
       if (token != null) headers['Authorization'] = 'Bearer $token';
