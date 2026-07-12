@@ -29,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _error = hasil['pesan'] ?? 'Login gagal');
       }
     } catch (e) {
-      setState(() => _error = 'Tidak bisa terhubung ke server');
+      setState(() => _error = 'Gagal terhubung: $e');
     } finally {
       setState(() => _loading = false);
     }
