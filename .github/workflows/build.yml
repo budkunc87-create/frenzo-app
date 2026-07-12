@@ -16,6 +16,11 @@ jobs:
           flutter-version: '3.24.0'
           channel: 'stable'
 
+      - name: Buat scaffold Android yang hilang
+        run: |
+          flutter create --platforms=android --project-name frenzo_mobile /tmp/scaffold
+          cp -r /tmp/scaffold/android .
+
       - name: Ambil dependencies
         run: flutter pub get
 
