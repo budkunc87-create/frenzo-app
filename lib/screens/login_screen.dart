@@ -13,82 +13,64 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _sandiCtrl = TextEditingController();
+
   bool _loading = false;
   String? _error;
 
   Future<void> _login() async {
-    setState(() { _loading = true; _error = null; });
+    if (_loading) return;
+
+    final email = _emailCtrl.text.trim();
+    final sandi = _sandiCtrl.text.trim();
+
+    if (email.isEmpty) {
+      setState(() => _error = "Email harus diisi");
+      return;
+    }
+
+    if (sandi.isEmpty) {
+      setState(() => _error = "Kata sandi harus diisi");
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
     try {
-      final hasil = await ApiService.login(_emailCtrl.text.trim(), _sandiCtrl.text.trim());
+      final hasil = await ApiService.login(email, sandi);
+
+      if (!mounted) return;
+
       if (hasil['sukses'] == true) {
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const FeedScreen()),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const FeedScreen(),
+          ),
         );
       } else {
-        setState(() => _error = hasil['pesan'] ?? 'Login gagal');
+        setState(() {
+          _error = hasil['pesan']?.toString() ?? "Login gagal";
+        });
       }
-    } catch (e) {
-      setState(() => _error = 'Gagal terhubung: $e');
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
+    } catch (e, s) {
+      debugPrint("LOGIN ERROR: $e");
+      debugPrintStack(stackTrace: s);
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF12091F),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text('Frenzo', style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              const Text('Terhubung dengan teman', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _emailCtrl,
-                style: const TextStyle(color: Colors.white),
-                decoration: _dekorasiInput('Email'),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _sandiCtrl,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: _dekorasiInput('Kata sandi'),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: Colors.redAccent)),
-              ],
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _loading ? null : _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6D28D9),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Masuk', style: TextStyle(color: Colors.white)),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                ),
-                child: const Text('Belum punya akun? Daftar', style: TextStyle(color: Colors.white70)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+      if (!mounted) return;
+
+      setState(() {
+        _error = e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
   }
 
   InputDecoration _dekorasiInput(String label) {
@@ -97,7 +79,114 @@ class _LoginScreenState extends State<LoginScreen> {
       labelStyle: const TextStyle(color: Colors.white54),
       filled: true,
       fillColor: Colors.white.withOpacity(0.05),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _sandiCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF12091F),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  "Frenzo",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Terhubung dengan teman",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 32),
+                TextField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _dekorasiInput("Email"),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _sandiCtrl,
+                  obscureText: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _dekorasiInput("Kata sandi"),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6D28D9),
+                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            "Masuk",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const RegisterScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "Belum punya akun? Daftar",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
