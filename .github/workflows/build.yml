@@ -20,16 +20,20 @@ jobs:
           flutter-version: "3.24.0"
           channel: stable
 
-      - name: Cek Flutter
+      - name: Flutter Version
         run: flutter --version
 
-      - name: Buat Folder Android
-        run: flutter create . --platforms=android
+      - name: Generate Android Project
+        run: |
+          flutter create . \
+            --platforms=android \
+            --project-name=frenzo_mobile \
+            --org=com.frenzo.app
 
-      - name: Install Dependencies
+      - name: Get Dependencies
         run: flutter pub get
 
-      - name: Build APK Release
+      - name: Build Release APK
         run: flutter build apk --release
 
       - name: Upload APK
