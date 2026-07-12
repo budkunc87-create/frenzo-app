@@ -1,10 +1,51 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart' as ioc;
 import 'package:shared_preferences/shared_preferences.dart';
 
 const String baseUrl = 'https://shortcut.webze.eu.org/api';
 
 class ApiService {
+  static http.Client? _client;
+  static String? _resolvedIp;
+
+  static Future<String?> _resolveIpViaDoH(String hostname) async {
+    try {
+      final resp = await http.get(
+        Uri.parse('https://dns.google/resolve?name=$hostname&type=A'),
+        headers: {'Accept': 'application/dns-json'},
+      ).timeout(const Duration(seconds: 8));
+      final data = jsonDecode(resp.body);
+      final answers = data['Answer'] as List?;
+      if (answers != null) {
+        for (final a in answers) {
+          if (a['type'] == 1) return a['data'];
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<http.Client> _getClient() async {
+    if (_client != null) return _client!;
+
+    final hostname = Uri.parse(baseUrl).host;
+    _resolvedIp = await _resolveIpViaDoH(hostname);
+
+    if (_resolvedIp == null) {
+      _client = http.Client();
+      return _client!;
+    }
+
+    final httpClient = HttpClient();
+    httpClient.connectionFactory = (Uri uri, String? proxyHost, int? proxyPort) {
+      return Socket.startConnect(_resolvedIp!, uri.port);
+    };
+    _client = ioc.IOClient(httpClient);
+    return _client!;
+  }
+
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
@@ -35,7 +76,8 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> _post(String endpoint, Map<String, dynamic> body, {bool withAuth = true}) async {
-    final resp = await http.post(
+    final client = await _getClient();
+    final resp = await client.post(
       Uri.parse('$baseUrl/$endpoint'),
       headers: await _headers(withAuth: withAuth),
       body: jsonEncode(body),
@@ -44,7 +86,8 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> _get(String endpoint) async {
-    final resp = await http.get(
+    final client = await _getClient();
+    final resp = await client.get(
       Uri.parse('$baseUrl/$endpoint'),
       headers: await _headers(),
     );
