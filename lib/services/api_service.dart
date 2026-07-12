@@ -9,6 +9,7 @@ const String baseUrl = 'https://shortcut.webze.eu.org/api';
 class ApiService {
   static http.Client? _client;
   static String? _resolvedIp;
+  static String debugInfo = 'belum dicoba';
 
   static Future<String?> _resolveIpViaDoH(String hostname) async {
     try {
@@ -20,10 +21,16 @@ class ApiService {
       final answers = data['Answer'] as List?;
       if (answers != null) {
         for (final a in answers) {
-          if (a['type'] == 1) return a['data'];
+          if (a['type'] == 1) {
+            debugInfo = 'DoH sukses, IP=${a['data']}';
+            return a['data'];
+          }
         }
       }
-    } catch (_) {}
+      debugInfo = 'DoH sukses tapi tidak ada record A. Status=${data['Status']}, respons=${resp.body}';
+    } catch (e) {
+      debugInfo = 'DoH gagal: $e';
+    }
     return null;
   }
 
