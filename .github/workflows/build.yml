@@ -11,33 +11,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.24.0"
           channel: stable
 
-      - name: Flutter Version
-        run: flutter --version
-
-      - name: Generate Android Project
+      - name: Generate Android
         run: |
-          flutter create . \
-            --platforms=android \
-            --project-name=frenzo_mobile \
-            --org=com.frenzo.app
+          flutter create . --platforms=android --project-name=frenzo_mobile
 
-      - name: Get Dependencies
+      - name: Update Kotlin Version
+        run: |
+          sed -i 's/version "1.7.10"/version "1.9.24"/g' android/settings.gradle || true
+          sed -i "s/ext.kotlin_version = '1.7.10'/ext.kotlin_version = '1.9.24'/g" android/build.gradle || true
+
+      - name: Get Packages
         run: flutter pub get
 
-      - name: Build Release APK
+      - name: Build APK
         run: flutter build apk --release
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: frenzo-apk
           path: build/app/outputs/flutter-apk/app-release.apk
