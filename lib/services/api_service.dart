@@ -89,7 +89,12 @@ class ApiService {
       headers: await _headers(withAuth: withAuth),
       body: jsonEncode(body),
     );
-    return jsonDecode(resp.body) as Map<String, dynamic>;
+    try {
+      return jsonDecode(resp.body) as Map<String, dynamic>;
+    } catch (e) {
+      final potongan = resp.body.length > 500 ? resp.body.substring(0, 500) : resp.body;
+      throw Exception('Status HTTP ${resp.statusCode}. Isi respons:\n$potongan');
+    }
   }
 
   static Future<Map<String, dynamic>> _get(String endpoint) async {
