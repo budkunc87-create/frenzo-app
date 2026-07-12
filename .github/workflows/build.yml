@@ -3,37 +3,32 @@ name: Build APK Frenzo
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.0"
-          channel: stable
+          channel: 'stable'
 
-      - name: Generate Android
-        run: |
-          flutter create . --platforms=android --project-name=frenzo_mobile
+      - name: Pastikan folder platform Android ada
+        run: flutter create --platforms=android --project-name=frenzo_mobile .
 
-      - name: Update Kotlin Version
-        run: |
-          sed -i 's/version "1.7.10"/version "1.9.24"/g' android/settings.gradle || true
-          sed -i "s/ext.kotlin_version = '1.7.10'/ext.kotlin_version = '1.9.24'/g" android/build.gradle || true
+      - name: Tambahkan izin internet ke build release
+        run: sed -i '/<manifest /a\    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
 
-      - name: Get Packages
+      - name: Ambil dependencies
         run: flutter pub get
 
       - name: Build APK
         run: flutter build apk --release
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK sebagai hasil build
+        uses: actions/upload-artifact@v4
         with:
           name: frenzo-apk
           path: build/app/outputs/flutter-apk/app-release.apk
