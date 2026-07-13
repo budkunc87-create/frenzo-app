@@ -50,7 +50,7 @@ class ApiService {
       final future = Socket.connect(_resolvedIp!, uri.port).then(
         (socket) => SecureSocket.secure(socket, host: uri.host),
       );
-      return ConnectionTask.fromSocket(future, () {});
+      return Future.value(ConnectionTask<Socket>.fromSocket(future, () {}));
     };
     _client = ioc.IOClient(httpClient);
     return _client!;
