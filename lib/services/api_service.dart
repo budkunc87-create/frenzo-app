@@ -47,11 +47,10 @@ class ApiService {
 
     final httpClient = HttpClient();
     httpClient.connectionFactory = (Uri uri, String? proxyHost, int? proxyPort) {
-      return SecureSocket.startConnect(
-        _resolvedIp!,
-        uri.port,
-        host: uri.host,
+      final future = Socket.connect(_resolvedIp!, uri.port).then(
+        (socket) => SecureSocket.secure(socket, host: uri.host),
       );
+      return ConnectionTask.fromSocket(future, () {});
     };
     _client = ioc.IOClient(httpClient);
     return _client!;
