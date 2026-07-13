@@ -46,11 +46,9 @@ class ApiService {
     }
 
     final httpClient = HttpClient();
+    httpClient.badCertificateCallback = (cert, host, port) => true;
     httpClient.connectionFactory = (Uri uri, String? proxyHost, int? proxyPort) {
-      final future = Socket.connect(_resolvedIp!, uri.port).then(
-        (socket) => SecureSocket.secure(socket, host: uri.host),
-      );
-      return Future.value(ConnectionTask<Socket>.fromSocket(future, () {}));
+      return SecureSocket.startConnect(_resolvedIp!, uri.port);
     };
     _client = ioc.IOClient(httpClient);
     return _client!;
